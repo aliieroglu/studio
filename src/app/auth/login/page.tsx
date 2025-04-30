@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -6,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Import useRouter for redirection
+import { useRouter } from "next/navigation";
+import { useAuth, type UserRole } from '@/context/AuthContext'; // Import useAuth and UserRole
 
 // Placeholder SVG for LexFlow Logo
 const LexFlowLogo = () => (
@@ -23,21 +25,27 @@ const LexFlowLogo = () => (
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
+  const { setUserRole } = useAuth(); // Get setUserRole from context
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic validation (enhance as needed)
     if (!email || !password) {
       alert("Lütfen e-posta ve şifrenizi girin.");
       return;
     }
-    // Placeholder for actual login logic
     console.log("Login attempt with:", { email, password });
 
-    // Simulate successful login and redirect to dashboard
-    // In a real app, replace this with actual authentication check
-    // For demo purposes, redirect immediately
+    // --- SIMULATION: Determine role based on email ---
+    // Replace this with actual authentication and role fetching
+    let role: UserRole = 'client'; // Default to client
+    if (email.toLowerCase().includes('lawyer')) {
+      role = 'lawyer';
+    }
+    // --- END SIMULATION ---
+
+    setUserRole(role); // Set the user role in the context
+
     router.push("/dashboard");
   };
 
@@ -50,7 +58,8 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold text-primary">Giriş Yap</CardTitle>
           <CardDescription>
-            Hesabınıza erişmek için e-posta adresinizi girin
+            Hesabınıza erişmek için e-posta adresinizi girin <br/>
+            <span className="text-xs text-muted-foreground">(Simülasyon: 'lawyer' içeren e-posta avukat, diğerleri müvekkil olarak giriş yapar)</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,7 +69,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="ornek@mail.com"
+                placeholder="ornek@mail.com veya lawyer@mail.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

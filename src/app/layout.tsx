@@ -1,8 +1,10 @@
+
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google'; // Changed font to Inter for a more modern feel
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster'; // Import Toaster
+import { AuthProvider } from '@/context/AuthContext'; // Import AuthProvider
 
 const inter = Inter({
   subsets: ['latin'],
@@ -27,8 +29,10 @@ export default function RootLayout({
           inter.variable // Use Inter font
         )}
       >
-        {children}
-        <Toaster /> {/* Add Toaster */}
+        <AuthProvider> {/* Wrap children with AuthProvider */}
+          {children}
+          <Toaster /> {/* Add Toaster */}
+        </AuthProvider>
       </body>
     </html>
   );

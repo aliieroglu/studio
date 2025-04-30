@@ -1,36 +1,30 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Briefcase } from "lucide-react";
+
+'use client'; // Required because we use hooks (useAuth)
+
+import { useAuth } from '@/context/AuthContext';
+import ClientCasesView from '@/components/dashboard/cases/ClientCasesView';
+import LawyerCasesView from '@/components/dashboard/cases/LawyerCasesView';
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 export default function CasesPage() {
-  return (
-    <div className="container mx-auto py-8">
-       <div className="flex items-center gap-4 mb-8">
-        <Briefcase className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold text-primary">Davalarım</h1>
+  const { userRole } = useAuth();
+
+  // Optional: Add a loading state while auth context is initializing
+  if (!userRole) {
+    return (
+       <div className="container mx-auto py-8 space-y-6">
+         <Skeleton className="h-10 w-1/3" />
+         <Skeleton className="h-64 w-full" />
+         <Skeleton className="h-10 w-1/4" />
+         <Skeleton className="h-48 w-full" />
        </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Devam Eden Davalar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Burada devam eden davalarınız listelenecektir.</p>
-           {/* Placeholder content */}
-          <div className="mt-4 border rounded-lg p-4">
-             Dava XYZ - Durum: İncelemede
-          </div>
-           <div className="mt-4 border rounded-lg p-4">
-             Dava ABC - Durum: Karar Bekleniyor
-          </div>
-        </CardContent>
-      </Card>
-       <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Tamamlanmış Davalar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Burada tamamlanmış davalarınız listelenecektir.</p>
-        </CardContent>
-      </Card>
-    </div>
+     );
+  }
+
+  return (
+    <>
+      {userRole === 'client' && <ClientCasesView />}
+      {userRole === 'lawyer' && <LawyerCasesView />}
+    </>
   );
 }

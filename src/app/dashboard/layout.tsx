@@ -1,10 +1,16 @@
+
+'use client'; // Required because we use hooks (useAuth)
+
 import React from "react";
 import Link from "next/link";
+import { usePathname } from 'next/navigation'; // Import usePathname
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Settings, User, LogOut, Scale, Users, Briefcase } from "lucide-react"; // Added relevant icons
+import { Menu, Settings, User, LogOut, Scale, Users, Briefcase, LayoutDashboard } from "lucide-react"; // Added LayoutDashboard
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { cn } from "@/lib/utils"; // Import cn
 
 // Placeholder SVG for LexFlow Logo (smaller version for header)
 const LexFlowLogoSmall = () => (
@@ -17,14 +23,60 @@ const LexFlowLogoSmall = () => (
   </svg>
 );
 
+
+// Navigation Items Definition
+const navItems = {
+  client: [
+    { href: "/dashboard", label: "Gösterge Paneli", icon: LayoutDashboard },
+    { href: "/dashboard/hearings", label: "Duruşmalarım", icon: Scale },
+    { href: "/dashboard/connections", label: "Avukatlarım", icon: Users },
+    { href: "/dashboard/cases", label: "Davalarım", icon: Briefcase },
+  ],
+  lawyer: [
+    { href: "/dashboard", label: "Gösterge Paneli", icon: LayoutDashboard },
+    { href: "/dashboard/hearings", label: "Duruşmalar", icon: Scale }, // Maybe just "Duruşmalar" for lawyers
+    { href: "/dashboard/connections", label: "Müvekkillerim", icon: Users },
+    { href: "/dashboard/cases", label: "Müvekkil Davaları", icon: Briefcase },
+    // Add lawyer-specific items here, e.g., "/dashboard/billing"
+  ],
+};
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { userRole } = useAuth();
+  const pathname = usePathname(); // Get current path
+
   // In a real app, get user info from session/auth context
   const userName = "Kullanıcı Adı";
   const userInitials = userName.split(' ').map(n => n[0]).join('');
+
+  const currentNavItems = userRole ? navItems[userRole] : []; // Get nav items based on role
+
+  const renderNavLinks = (isMobile = false) => (
+    currentNavItems.map((item) => {
+       const isActive = pathname === item.href;
+       return (
+         <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
+             isActive
+              ? "bg-muted text-primary" // Active link style
+              : "text-muted-foreground hover:text-primary hover:bg-muted", // Inactive link style
+             isMobile ? "text-lg" : "text-sm" // Adjust text size for mobile/desktop
+          )}
+          prefetch={false}
+        >
+          <item.icon className="h-4 w-4" />
+          {item.label}
+        </Link>
+      );
+    })
+   );
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
@@ -52,34 +104,14 @@ export default function DashboardLayout({
                   <LexFlowLogoSmall />
                   <span>LexFlow</span>
                 </Link>
-                <Link
-                  href="/dashboard/hearings"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-                  prefetch={false}
-                >
-                  <Scale className="h-4 w-4" />
-                  Duruşmalarım
-                </Link>
-                <Link
-                  href="/dashboard/connections" // Consolidated page for lawyers/clients
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-                  prefetch={false}
-                >
-                  <Users className="h-4 w-4" />
-                  Avukatlarım/Müvekkillerim
-                </Link>
-                <Link
-                  href="/dashboard/cases"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-                  prefetch={false}
-                >
-                  <Briefcase className="h-4 w-4" />
-                  Davalarım
-                </Link>
+                {renderNavLinks(true)} {/* Render mobile nav links */}
                 <Link
                   href="/dashboard/settings"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted mt-auto"
-                  prefetch={false}
+                  className={cn(
+                     "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted mt-auto",
+                     pathname === "/dashboard/settings" ? "bg-muted text-primary" : ""
+                   )}
+                   prefetch={false}
                 >
                   <Settings className="h-4 w-4" />
                   Ayarlar
@@ -97,6 +129,10 @@ export default function DashboardLayout({
             <LexFlowLogoSmall />
             <span className="sr-only">LexFlow</span>
           </Link>
+           {/* Desktop Navigation Links */}
+           <div className="hidden md:flex md:gap-4">
+              {renderNavLinks()} {/* Render desktop nav links */}
+            </div>
         </nav>
 
         {/* Right Side: Profile Dropdown */}
@@ -105,14 +141,15 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full border border-primary-foreground/50">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder-user.jpg" alt="@username" />
+                  {/* Use a placeholder or actual user image */}
+                  <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User Avatar" />
                   <AvatarFallback className="bg-primary-foreground text-primary">{userInitials}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Kullanıcı menüsünü aç/kapat</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-card text-card-foreground">
-              <DropdownMenuLabel>Hesabım</DropdownMenuLabel>
+              <DropdownMenuLabel>Hesabım ({userRole === 'client' ? 'Müvekkil' : 'Avukat'})</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/profile" className="cursor-pointer flex items-center gap-2">
@@ -126,8 +163,8 @@ export default function DashboardLayout({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                 {/* Add Logout functionality here */}
-                <Link href="/auth/login" className="cursor-pointer flex items-center gap-2 text-destructive">
+                 {/* Add Logout functionality here - clears AuthContext and redirects */}
+                <Link href="/auth/login" onClick={() => { /* Add actual logout logic */ }} className="cursor-pointer flex items-center gap-2 text-destructive">
                    <LogOut className="h-4 w-4" /> Çıkış Yap
                 </Link>
               </DropdownMenuItem>
