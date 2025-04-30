@@ -16,7 +16,17 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+       // If placeholder-user.jpg is served from a remote host, add its pattern here.
+       // Example for a generic placeholder service:
+      // {
+      //   protocol: 'https',
+      //   hostname: 'via.placeholder.com',
+      //   port: '',
+      //   pathname: '/**',
+      // },
     ],
+     // Allow serving local images if placeholder-user.jpg is local (though remotePatterns is generally preferred)
+    // domains: ['localhost'], // Example if served locally during dev
   },
 };
 
