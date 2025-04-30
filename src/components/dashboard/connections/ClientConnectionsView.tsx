@@ -58,11 +58,11 @@ export default function ClientConnectionsView() {
         </CardHeader>
         <CardContent className="space-y-4">
           {currentLawyers.map((lawyer) => (
-            <Link href={`/dashboard/profile/${lawyer.id}`} key={lawyer.id} className="block group">
+            <Link href={`/dashboard/lawyers/${lawyer.id}`} key={lawyer.id} className="block group"> {/* Updated Link */}
               <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12 border">
-                    <AvatarImage src={lawyer.imageUrl} alt={lawyer.name} />
+                    <AvatarImage src={lawyer.imageUrl} alt={lawyer.name} data-ai-hint="lawyer person" />
                     <AvatarFallback>{lawyer.initials}</AvatarFallback>
                   </Avatar>
                   <span className="font-medium text-foreground">{lawyer.name}</span>
@@ -84,11 +84,11 @@ export default function ClientConnectionsView() {
         </CardHeader>
         <CardContent className="space-y-4">
           {pastLawyers.map((lawyer) => (
-             <Link href={`/dashboard/profile/${lawyer.id}`} key={lawyer.id} className="block group">
+             <Link href={`/dashboard/lawyers/${lawyer.id}`} key={lawyer.id} className="block group"> {/* Updated Link */}
                 <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12 border">
-                      <AvatarImage src={lawyer.imageUrl} alt={lawyer.name} />
+                      <AvatarImage src={lawyer.imageUrl} alt={lawyer.name} data-ai-hint="lawyer person" />
                       <AvatarFallback>{lawyer.initials}</AvatarFallback>
                     </Avatar>
                     <span className="font-medium text-foreground">{lawyer.name}</span>
