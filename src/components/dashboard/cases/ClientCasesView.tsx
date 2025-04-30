@@ -9,8 +9,10 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Briefcase, Clock, MapPin } from "lucide-react";
+import { Briefcase, Clock, MapPin, Eye } from "lucide-react"; // Added Eye icon
 import Image from 'next/image'; // Import next/image
+import Link from 'next/link'; // Import Link
+import { Button } from "@/components/ui/button"; // Import Button
 
 // Sample data (replace with actual data fetching)
 const ongoingCases = [
@@ -67,6 +69,7 @@ export default function ClientCasesView() {
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pt-2 pb-4 bg-muted/20">
                   <div className="flex flex-col md:flex-row gap-6">
+                    {/* Case Details */}
                     <div className="flex-1 space-y-3 text-foreground">
                       <h3 className="text-md font-semibold mb-2 text-primary">Son Duruşmaya Ait Bilgiler</h3>
                       <div className="flex items-center gap-2">
@@ -80,7 +83,17 @@ export default function ClientCasesView() {
                         <MapPin className="h-4 w-4 text-primary" />
                         <span><span className="font-medium">Mahkeme İsmi ve Adresi:</span> {caseItem.courtName}, {caseItem.courtAddress}</span>
                       </div>
+                      {/* View Details Button */}
+                      <div className="pt-4">
+                        <Link href={`/dashboard/cases/${caseItem.id}`} passHref>
+                           <Button variant="outline" size="sm">
+                             <Eye className="mr-2 h-4 w-4" />
+                             Detay Görüntüle
+                           </Button>
+                        </Link>
+                      </div>
                     </div>
+                     {/* Lawyer Info */}
                     <div className="flex flex-col items-center md:items-end gap-2">
                         <p className="text-sm font-medium text-primary mb-1">Avukatın</p>
                         <div className="relative h-24 w-24 md:h-32 md:w-32 rounded-md overflow-hidden border-2 border-accent shadow-md">
@@ -117,7 +130,17 @@ export default function ClientCasesView() {
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pt-2 pb-4 bg-muted/10">
                   <p className="text-muted-foreground">Bu dava tamamlanmıştır. Detaylar için avukatınızla iletişime geçebilirsiniz.</p>
-                  {/* Add more completed case details if needed */}
+                  {/* Optionally add a details button for completed cases too */}
+                   {/*
+                   <div className="pt-4">
+                     <Link href={`/dashboard/cases/${caseItem.id}`} passHref>
+                        <Button variant="outline" size="sm" className="border-accent/50 text-accent/90 hover:bg-accent/10">
+                          <Eye className="mr-2 h-4 w-4" />
+                          Detay Görüntüle
+                        </Button>
+                     </Link>
+                   </div>
+                   */}
                 </AccordionContent>
               </AccordionItem>
             ))}
