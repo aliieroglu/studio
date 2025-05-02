@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -8,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
-import { Briefcase, Clock, MapPin, Eye, PlusCircle, ArrowLeft, ArrowRight } from "lucide-react"; // Added icons
+import { Briefcase, Clock, MapPin, Eye, PlusCircle, ArrowLeft, ArrowRight, User, Phone, Mail, Building, Banknote, ShieldAlert, Home } from "lucide-react"; // Added icons
 import Image from 'next/image'; // Import next/image
 import Link from 'next/link'; // Import Link
 import { Button } from "@/components/ui/button"; // Import Button
@@ -16,6 +17,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea"; // Import Textarea
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select
+import { DatePicker } from "@/components/ui/date-picker"; // Import DatePicker
 
 // Sample data for Lawyer's view (replace with actual data fetching)
 const ongoingCases = [
@@ -60,8 +64,52 @@ export default function LawyerCasesView() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1); // Step for the multi-step form
 
+  // State for client form data
+  const [clientData, setClientData] = useState({
+    firstName: '',
+    lastName: '',
+    tcKimlik: '',
+    birthDate: undefined as Date | undefined,
+    email: '',
+    phone: '',
+    address: '',
+    companyName: '',
+    title: '',
+    iban: '',
+    bankName: '',
+    paymentMethod: '',
+    emergencyContactName: '',
+    emergencyContactRelationship: '',
+    emergencyContactPhone: '',
+  });
+
+  // Handle input changes for client form
+  const handleClientInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setClientData(prev => ({ ...prev, [id]: value }));
+  };
+
+  // Handle select changes
+  const handleSelectChange = (id: string, value: string) => {
+      setClientData(prev => ({ ...prev, [id]: value }));
+  };
+
+  // Handle date changes
+  const handleDateChange = (id: string, date: Date | undefined) => {
+      setClientData(prev => ({ ...prev, [id]: date }));
+  };
+
+
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
+  const handleSave = () => {
+      // Logic to save all collected data (from clientData, and potentially other steps)
+      console.log("Saving data:", { clientData /*, lawyerData, caseData */ });
+      setOpen(false); // Close dialog after save
+      setStep(1); // Reset step
+      // Reset form states if necessary
+  };
+
 
   return (
     <div className="container mx-auto py-8">
@@ -77,50 +125,164 @@ export default function LawyerCasesView() {
                   <PlusCircle className="mr-2 h-4 w-4" /> Yeni Dava Oluştur
                </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"> {/* Increased width and added scroll */}
                <DialogHeader>
-                  <DialogTitle>Yeni Dava Oluştur</DialogTitle>
+                  <DialogTitle className="text-xl font-bold text-primary">Yeni Dava Oluştur</DialogTitle>
                </DialogHeader>
+
+               {/* Step 1: Müvekkil Bilgileri */}
                {step === 1 && (
-                  <div>
-                     <h3 className="text-lg font-semibold mb-4">1. Müvekkil Bilgileri</h3>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                           <Label htmlFor="firstName">Ad</Label>
-                           <Input id="firstName" placeholder="Müvekkil Adı" />
-                        </div>
-                        <div>
-                           <Label htmlFor="lastName">Soyad</Label>
-                           <Input id="lastName" placeholder="Müvekkil Soyadı" />
-                        </div>
+                  <div className="space-y-6 p-2">
+                     <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><User className="h-5 w-5" /> 1. Müvekkil Bilgileri</h3>
+
+                     {/* Temel Kimlik Bilgileri */}
+                     <div className="space-y-4 p-4 border rounded-lg">
+                         <h4 className="font-medium text-muted-foreground mb-3">Temel Kimlik Bilgileri</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                               <Label htmlFor="firstName">Ad</Label>
+                               <Input id="firstName" placeholder="Müvekkil Adı" value={clientData.firstName} onChange={handleClientInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                               <Label htmlFor="lastName">Soyad</Label>
+                               <Input id="lastName" placeholder="Müvekkil Soyadı" value={clientData.lastName} onChange={handleClientInputChange} />
+                            </div>
+                         </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="tcKimlik">T.C. Kimlik No</Label>
+                                <Input id="tcKimlik" placeholder="11 Haneli T.C. Kimlik Numarası" value={clientData.tcKimlik} onChange={handleClientInputChange} maxLength={11} />
+                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="birthDate">Doğum Tarihi</Label>
+                                <DatePicker date={clientData.birthDate} setDate={(date) => handleDateChange('birthDate', date)} />
+                            </div>
+                         </div>
                      </div>
-                     <div className="mt-4">
-                        <Label htmlFor="email">E-posta</Label>
-                        <Input id="email" type="email" placeholder="E-posta Adresi" />
+
+                     {/* İletişim Bilgileri */}
+                     <div className="space-y-4 p-4 border rounded-lg">
+                         <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><Phone className="h-4 w-4" /> İletişim Bilgileri</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="email">E-posta Adresi</Label>
+                                <Input id="email" type="email" placeholder="ornek@mail.com" value={clientData.email} onChange={handleClientInputChange} />
+                             </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="phone">Telefon Numarası</Label>
+                                <Input id="phone" type="tel" placeholder="+90 555 123 4567" value={clientData.phone} onChange={handleClientInputChange} />
+                             </div>
+                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="address" className="flex items-center gap-1"><Home className="h-4 w-4"/> Adres (İkametgah)</Label>
+                            <Textarea id="address" placeholder="Müvekkilin ikametgah adresi..." value={clientData.address} onChange={handleClientInputChange} />
+                         </div>
+                     </div>
+
+                     {/* Mesleki & Kurumsal Bilgiler */}
+                     <div className="space-y-4 p-4 border rounded-lg">
+                         <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><Building className="h-4 w-4"/> Mesleki & Kurumsal Bilgiler</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="companyName">Çalıştığı Kurum / Şirket Adı</Label>
+                                <Input id="companyName" placeholder="Şirket Adı (varsa)" value={clientData.companyName} onChange={handleClientInputChange} />
+                             </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="title">Görev / Unvan</Label>
+                                <Input id="title" placeholder="Görevi (varsa)" value={clientData.title} onChange={handleClientInputChange} />
+                             </div>
+                         </div>
+                     </div>
+
+                     {/* Hukuki / Mali Bilgiler */}
+                     <div className="space-y-4 p-4 border rounded-lg">
+                        <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><Banknote className="h-4 w-4" /> Hukuki / Mali Bilgiler</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="iban">IBAN</Label>
+                                <Input id="iban" placeholder="TRXX XXXX XXXX XXXX XXXX XXXX XX" value={clientData.iban} onChange={handleClientInputChange} />
+                             </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="bankName">Banka Adı</Label>
+                                <Input id="bankName" placeholder="IBAN'ın Ait Olduğu Banka" value={clientData.bankName} onChange={handleClientInputChange} />
+                             </div>
+                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="paymentMethod">Tercih Edilen Ödeme Yöntemi</Label>
+                            <Select value={clientData.paymentMethod} onValueChange={(value) => handleSelectChange('paymentMethod', value)}>
+                                <SelectTrigger id="paymentMethod">
+                                <SelectValue placeholder="Ödeme Yöntemi Seçin" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                <SelectItem value="havale">Havale/EFT</SelectItem>
+                                <SelectItem value="kredi_karti">Kredi Kartı</SelectItem>
+                                <SelectItem value="nakit">Nakit</SelectItem>
+                                <SelectItem value="diger">Diğer</SelectItem>
+                                </SelectContent>
+                            </Select>
+                         </div>
+                     </div>
+
+                     {/* Acil Durum & İletişim Yetkilisi */}
+                     <div className="space-y-4 p-4 border rounded-lg">
+                         <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><ShieldAlert className="h-4 w-4"/> Acil Durum İletişim Yetkilisi</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="emergencyContactName">Ad Soyad</Label>
+                                <Input id="emergencyContactName" placeholder="İsim" value={clientData.emergencyContactName} onChange={handleClientInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="emergencyContactRelationship">Yakınlık Derecesi</Label>
+                                <Input id="emergencyContactRelationship" placeholder="Eşi, Kardeşi vb." value={clientData.emergencyContactRelationship} onChange={handleClientInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="emergencyContactPhone">Telefon Numarası</Label>
+                                <Input id="emergencyContactPhone" type="tel" placeholder="+90 5xx xxx xx xx" value={clientData.emergencyContactPhone} onChange={handleClientInputChange} />
+                            </div>
+                         </div>
                      </div>
                   </div>
                )}
+
+                {/* Step 2: Avukat Bilgileri Placeholder */}
                {step === 2 && (
-                  <div>
-                     <h3 className="text-lg font-semibold mb-4">2. Avukat Bilgileri</h3>
-                     <div>
-                        <Label htmlFor="lawyerName">Avukat Adı</Label>
-                        <Input id="lawyerName" placeholder="Avukatın Adı" />
+                  <div className="space-y-6 p-2">
+                     <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><User className="h-5 w-5" /> 2. Avukat Bilgileri</h3>
+                     <div className="p-4 border rounded-lg">
+                         {/* Placeholder fields for Lawyer Info */}
+                         <div className="space-y-2">
+                            <Label htmlFor="lawyerName">Avukat Adı</Label>
+                            <Input id="lawyerName" placeholder="Atanacak Avukatın Adı" />
+                         </div>
+                         <div className="mt-4 space-y-2">
+                            <Label htmlFor="lawyerBarNo">Baro Sicil No</Label>
+                            <Input id="lawyerBarNo" placeholder="Avukatın Baro Sicil Numarası" />
+                         </div>
                      </div>
                   </div>
                )}
+
+               {/* Step 3: Dava Bilgileri Placeholder */}
                {step === 3 && (
-                  <div>
-                     <h3 className="text-lg font-semibold mb-4">3. Dava Bilgileri</h3>
-                     <div>
-                        <Label htmlFor="caseName">Dava Adı</Label>
-                        <Input id="caseName" placeholder="Dava Adı" />
+                 <div className="space-y-6 p-2">
+                     <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><Briefcase className="h-5 w-5" /> 3. Dava Bilgileri</h3>
+                     <div className="p-4 border rounded-lg">
+                         {/* Placeholder fields for Case Info */}
+                         <div className="space-y-2">
+                            <Label htmlFor="caseName">Dava Adı/Türü</Label>
+                            <Input id="caseName" placeholder="Örn: Boşanma Davası, Ceza Davası" />
+                         </div>
+                         <div className="mt-4 space-y-2">
+                            <Label htmlFor="caseDescription">Dava Açıklaması</Label>
+                            <Textarea id="caseDescription" placeholder="Dava hakkında kısa bir açıklama..." />
+                         </div>
                      </div>
                   </div>
                )}
-               <DialogFooter>
+
+               <DialogFooter className="mt-6 pt-4 border-t">
                   {step > 1 && (
-                     <Button type="button" variant="secondary" onClick={handleBack}>
+                     <Button type="button" variant="outline" onClick={handleBack}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Geri
                      </Button>
                   )}
@@ -129,7 +291,7 @@ export default function LawyerCasesView() {
                         İleri <ArrowRight className="ml-2 h-4 w-4" />
                      </Button>
                   ) : (
-                     <Button type="button">
+                     <Button type="button" onClick={handleSave} className="bg-accent hover:bg-accent/80">
                         Kaydet
                      </Button>
                   )}
