@@ -7,19 +7,23 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
-import { Briefcase, Clock, MapPin, Eye, PlusCircle, ArrowLeft, ArrowRight, User, Phone, Mail, Building, Banknote, ShieldAlert, Home, UserCircle, GraduationCap } from "lucide-react"; // Added more icons
-import Image from 'next/image'; // Import next/image
-import Link from 'next/link'; // Import Link
-import { Button } from "@/components/ui/button"; // Import Button
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogOverlay, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Briefcase, Clock, MapPin, Eye, PlusCircle, ArrowLeft, ArrowRight, User, Phone, Mail, Building, Banknote, ShieldAlert, Home, UserCircle, GraduationCap, Search, Trash2 } from "lucide-react"; // Added Search, Trash2
+import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog"; // Removed DialogOverlay as it's part of DialogContent
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { Textarea } from "@/components/ui/textarea"; // Import Textarea
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select
-import { DatePicker } from "@/components/ui/date-picker"; // Import DatePicker
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useAuth } from '@/context/AuthContext'; // Import useAuth to potentially get lawyer info
+import { Badge } from "@/components/ui/badge"; // Import Badge
+
+// --- Sample Data ---
 
 // Sample data for Lawyer's view (replace with actual data fetching)
 const ongoingCases = [
@@ -57,31 +61,54 @@ const ongoingCases = [
 
 const completedCases = [
   { id: "c1", clientId: "c3", clientName: "Mustafa Demir", name: "Miras Davası" },
-  // Add more completed cases relevant to the lawyer
 ];
 
+// Simulated logged-in lawyer data (replace with actual auth data)
+const loggedInLawyer = {
+  id: "lawyerLoggedIn",
+  name: "Av. Giriş Yapan",
+  barId: "112233445",
+  imageUrl: "https://picsum.photos/seed/lawyerLoggedIn/40/40",
+  initials: "GY",
+};
+
+// Simulated list of searchable lawyers (replace with actual data source)
+const allLawyers = [
+  { id: "l1", name: "Av. Ayşe Yılmaz", barId: "231307114", imageUrl: "https://picsum.photos/seed/lawyer1/40/40", initials: "AY" },
+  { id: "l2", name: "Av. Mehmet Öztürk", barId: "123456789", imageUrl: "https://picsum.photos/seed/lawyer2/40/40", initials: "MÖ" },
+  { id: "l3", name: "Av. Zeynep Kaya", barId: "987654321", imageUrl: "https://picsum.photos/seed/lawyer3/40/40", initials: "ZK" },
+  { id: "l4", name: "Av. Hasan Demir", barId: "555666777", imageUrl: "https://picsum.photos/seed/lawyer4/40/40", initials: "HD" },
+];
+
+// --- Component ---
+
 export default function LawyerCasesView() {
+  const { userRole } = useAuth(); // Use auth context if needed later
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1); // Step for the multi-step form
 
   // State for client form data
   const [clientData, setClientData] = useState({
-    firstName: '',
-    lastName: '',
-    tcKimlik: '',
-    birthDate: undefined as Date | undefined,
-    email: '',
-    phone: '',
-    address: '',
-    companyName: '',
-    title: '',
-    iban: '',
-    bankName: '',
-    paymentMethod: '',
-    emergencyContactName: '',
-    emergencyContactRelationship: '',
-    emergencyContactPhone: '',
+    firstName: '', lastName: '', tcKimlik: '', birthDate: undefined as Date | undefined,
+    email: '', phone: '', address: '', companyName: '', title: '',
+    iban: '', bankName: '', paymentMethod: '', emergencyContactName: '',
+    emergencyContactRelationship: '', emergencyContactPhone: '',
   });
+
+  // State for lawyer information
+  const [primaryLawyer] = useState(loggedInLawyer); // Primary lawyer is the logged-in one
+  const [additionalLawyers, setAdditionalLawyers] = useState<typeof loggedInLawyer[]>([]);
+
+  // State for Step 3 (Case Info) - Placeholder
+  const [caseData, setCaseData] = useState({
+      caseName: '',
+      caseDescription: '',
+      // Add other case fields here
+  });
+
+  // State for Add Lawyer Dialog
+  const [addLawyerDialogOpen, setAddLawyerDialogOpen] = useState(false);
+  const [lawyerSearchQuery, setLawyerSearchQuery] = useState("");
 
   // Handle input changes for client form
   const handleClientInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -99,22 +126,57 @@ export default function LawyerCasesView() {
       setClientData(prev => ({ ...prev, [id]: date }));
   };
 
+  // Handle input changes for case form (Step 3)
+  const handleCaseInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { id, value } = e.target;
+      setCaseData(prev => ({ ...prev, [id]: value }));
+  };
 
+  // Navigation handlers
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
-  const handleSave = () => {
-      // Logic to save all collected data (from clientData, and potentially other steps)
-      console.log("Saving data:", { clientData /*, lawyerData, caseData */ });
-      setOpen(false); // Close dialog after save
-      setStep(1); // Reset step
-      // Reset form states if necessary
-       setClientData({ // Reset client data form
+
+  // Reset forms and close dialog
+  const resetAndClose = () => {
+      setOpen(false);
+      setStep(1);
+      setClientData({
         firstName: '', lastName: '', tcKimlik: '', birthDate: undefined,
         email: '', phone: '', address: '', companyName: '', title: '',
         iban: '', bankName: '', paymentMethod: '', emergencyContactName: '',
         emergencyContactRelationship: '', emergencyContactPhone: '',
       });
+      setAdditionalLawyers([]);
+      setCaseData({ caseName: '', caseDescription: '' });
   };
+
+  const handleSave = () => {
+      // Logic to save all collected data
+      console.log("Saving data:", { clientData, primaryLawyer, additionalLawyers, caseData });
+      resetAndClose();
+  };
+
+  // Add Lawyer Logic
+  const handleAddLawyer = (lawyerToAdd: typeof loggedInLawyer) => {
+      // Prevent adding the primary lawyer or duplicates
+      if (lawyerToAdd.id !== primaryLawyer.id && !additionalLawyers.some(l => l.id === lawyerToAdd.id)) {
+          setAdditionalLawyers(prev => [...prev, lawyerToAdd]);
+      }
+      setAddLawyerDialogOpen(false); // Close the search dialog
+      setLawyerSearchQuery(""); // Reset search
+  };
+
+  // Remove Lawyer Logic
+  const handleRemoveLawyer = (lawyerIdToRemove: string) => {
+       setAdditionalLawyers(prev => prev.filter(l => l.id !== lawyerIdToRemove));
+  };
+
+  // Filter lawyers for search
+  const filteredLawyers = allLawyers.filter(lawyer =>
+      lawyer.name.toLowerCase().includes(lawyerSearchQuery.toLowerCase()) &&
+      lawyer.id !== primaryLawyer.id && // Exclude primary lawyer
+      !additionalLawyers.some(al => al.id === lawyer.id) // Exclude already added lawyers
+  );
 
 
   return (
@@ -125,13 +187,13 @@ export default function LawyerCasesView() {
            <h1 className="text-3xl font-bold text-primary">Müvekkil Davaları</h1>
          </div>
          {/* Add New Case Button */}
-         <Dialog open={open} onOpenChange={setOpen}>
+         <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetAndClose(); else setOpen(true); }}>
             <DialogTrigger asChild>
                <Button className="bg-accent hover:bg-accent/90">
                   <PlusCircle className="mr-2 h-4 w-4" /> Yeni Dava Oluştur
                </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"> {/* Increased width and added scroll */}
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                <DialogHeader>
                   <DialogTitle className="text-xl font-bold text-primary">Yeni Dava Oluştur</DialogTitle>
                </DialogHeader>
@@ -142,7 +204,7 @@ export default function LawyerCasesView() {
                      <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><UserCircle className="h-5 w-5" /> 1. Müvekkil Bilgileri</h3>
 
                      {/* Temel Kimlik Bilgileri */}
-                     <div className="space-y-4 p-4 border rounded-lg">
+                     <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
                          <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><GraduationCap className="h-4 w-4"/> Temel Kimlik Bilgileri</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -167,7 +229,7 @@ export default function LawyerCasesView() {
                      </div>
 
                      {/* İletişim Bilgileri */}
-                     <div className="space-y-4 p-4 border rounded-lg">
+                     <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
                          <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><Phone className="h-4 w-4" /> İletişim Bilgileri</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
@@ -186,7 +248,7 @@ export default function LawyerCasesView() {
                      </div>
 
                      {/* Mesleki & Kurumsal Bilgiler */}
-                     <div className="space-y-4 p-4 border rounded-lg">
+                     <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
                          <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><Building className="h-4 w-4"/> Mesleki & Kurumsal Bilgiler</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
@@ -201,7 +263,7 @@ export default function LawyerCasesView() {
                      </div>
 
                      {/* Hukuki / Mali Bilgiler */}
-                     <div className="space-y-4 p-4 border rounded-lg">
+                     <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
                         <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><Banknote className="h-4 w-4" /> Hukuki / Mali Bilgiler</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
@@ -230,7 +292,7 @@ export default function LawyerCasesView() {
                      </div>
 
                      {/* Acil Durum & İletişim Yetkilisi */}
-                     <div className="space-y-4 p-4 border rounded-lg">
+                     <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
                          <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><ShieldAlert className="h-4 w-4"/> Acil Durum İletişim Yetkilisi</h4>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
@@ -250,42 +312,131 @@ export default function LawyerCasesView() {
                   </div>
                )}
 
-                {/* Step 2: Avukat Bilgileri Placeholder */}
+                {/* Step 2: Avukat Bilgileri */}
                {step === 2 && (
-                  <div className="space-y-6 p-2">
+                   <div className="space-y-6 p-2">
                      <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><User className="h-5 w-5" /> 2. Avukat Bilgileri</h3>
-                     <div className="p-4 border rounded-lg">
-                         {/* Placeholder fields for Lawyer Info */}
-                         <div className="space-y-2">
-                            <Label htmlFor="lawyerName">Avukat Adı</Label>
-                            <Input id="lawyerName" placeholder="Atanacak Avukatın Adı" />
+
+                     {/* Primary Lawyer (Logged In) - Display Only */}
+                     <div className="p-4 border rounded-lg bg-primary/5">
+                         <h4 className="font-medium text-primary mb-3">Birincil Avukat (Siz)</h4>
+                         <div className="flex items-center gap-3">
+                             <Avatar className="h-10 w-10 border">
+                                <AvatarImage src={primaryLawyer.imageUrl} alt={primaryLawyer.name} data-ai-hint="lawyer person" />
+                                <AvatarFallback>{primaryLawyer.initials}</AvatarFallback>
+                             </Avatar>
+                             <div>
+                                 <p className="font-semibold">{primaryLawyer.name}</p>
+                                 <p className="text-sm text-muted-foreground">Baro Sicil No: {primaryLawyer.barId}</p>
+                             </div>
                          </div>
-                         <div className="mt-4 space-y-2">
-                            <Label htmlFor="lawyerBarNo">Baro Sicil No</Label>
-                            <Input id="lawyerBarNo" placeholder="Avukatın Baro Sicil Numarası" />
-                         </div>
+                     </div>
+
+                     {/* Additional Lawyers */}
+                     <div className="p-4 border rounded-lg bg-primary/5">
+                          <h4 className="font-medium text-primary mb-3">Eklenen Diğer Avukatlar</h4>
+                          {additionalLawyers.length > 0 ? (
+                              <div className="space-y-3">
+                                  {additionalLawyers.map((lawyer) => (
+                                      <div key={lawyer.id} className="flex items-center justify-between p-2 border rounded-md bg-background">
+                                         <div className="flex items-center gap-3">
+                                             <Avatar className="h-8 w-8 border">
+                                                <AvatarImage src={lawyer.imageUrl} alt={lawyer.name} data-ai-hint="lawyer person" />
+                                                <AvatarFallback className="text-xs">{lawyer.initials}</AvatarFallback>
+                                             </Avatar>
+                                             <div>
+                                                 <p className="text-sm font-medium">{lawyer.name}</p>
+                                                 <p className="text-xs text-muted-foreground">Baro No: {lawyer.barId}</p>
+                                             </div>
+                                          </div>
+                                          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8" onClick={() => handleRemoveLawyer(lawyer.id)}>
+                                              <Trash2 className="h-4 w-4" />
+                                              <span className="sr-only">Avukatı Kaldır</span>
+                                          </Button>
+                                      </div>
+                                  ))}
+                              </div>
+                          ) : (
+                              <p className="text-sm text-muted-foreground">Henüz başka avukat eklenmedi.</p>
+                          )}
+
+                         {/* Add Lawyer Button -> Opens Sub-Dialog */}
+                         <Dialog open={addLawyerDialogOpen} onOpenChange={setAddLawyerDialogOpen}>
+                             <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="mt-4">
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Avukat Ekle
+                                </Button>
+                             </DialogTrigger>
+                             <DialogContent className="sm:max-w-[425px]">
+                                 <DialogHeader>
+                                     <DialogTitle>Avukat Ara ve Ekle</DialogTitle>
+                                 </DialogHeader>
+                                 <div className="py-4 space-y-4">
+                                     <div className="relative">
+                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                         <Input
+                                             id="lawyer-search"
+                                             placeholder="Avukat adıyla ara..."
+                                             value={lawyerSearchQuery}
+                                             onChange={(e) => setLawyerSearchQuery(e.target.value)}
+                                             className="pl-9"
+                                         />
+                                     </div>
+                                     <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                                         {filteredLawyers.length > 0 ? (
+                                             filteredLawyers.map(lawyer => (
+                                                 <div key={lawyer.id} className="flex items-center justify-between p-2 border rounded-md hover:bg-muted/50">
+                                                     <div className="flex items-center gap-2">
+                                                         <Avatar className="h-8 w-8 border">
+                                                             <AvatarImage src={lawyer.imageUrl} alt={lawyer.name} data-ai-hint="lawyer person"/>
+                                                             <AvatarFallback className="text-xs">{lawyer.initials}</AvatarFallback>
+                                                         </Avatar>
+                                                         <div>
+                                                            <p className="text-sm font-medium">{lawyer.name}</p>
+                                                            <p className="text-xs text-muted-foreground">Baro No: {lawyer.barId}</p>
+                                                         </div>
+                                                     </div>
+                                                     <Button size="sm" variant="outline" onClick={() => handleAddLawyer(lawyer)}>
+                                                         Ekle
+                                                     </Button>
+                                                 </div>
+                                             ))
+                                         ) : (
+                                             <p className="text-center text-sm text-muted-foreground pt-4">
+                                                 {lawyerSearchQuery ? "Eşleşen avukat bulunamadı." : "Aramaya başlayın."}
+                                             </p>
+                                         )}
+                                     </div>
+                                 </div>
+                                 <DialogFooter>
+                                      <Button variant="outline" onClick={() => setAddLawyerDialogOpen(false)}>Kapat</Button>
+                                 </DialogFooter>
+                             </DialogContent>
+                         </Dialog>
                      </div>
                   </div>
                )}
 
-               {/* Step 3: Dava Bilgileri Placeholder */}
+               {/* Step 3: Dava Bilgileri */}
                {step === 3 && (
                  <div className="space-y-6 p-2">
                      <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><Briefcase className="h-5 w-5" /> 3. Dava Bilgileri</h3>
-                     <div className="p-4 border rounded-lg">
-                         {/* Placeholder fields for Case Info */}
+                     <div className="p-4 border rounded-lg bg-primary/5">
                          <div className="space-y-2">
                             <Label htmlFor="caseName">Dava Adı/Türü</Label>
-                            <Input id="caseName" placeholder="Örn: Boşanma Davası, Ceza Davası" />
+                            <Input id="caseName" placeholder="Örn: Boşanma Davası, Ceza Davası" value={caseData.caseName} onChange={handleCaseInputChange}/>
                          </div>
                          <div className="mt-4 space-y-2">
                             <Label htmlFor="caseDescription">Dava Açıklaması</Label>
-                            <Textarea id="caseDescription" placeholder="Dava hakkında kısa bir açıklama..." />
+                            <Textarea id="caseDescription" placeholder="Dava hakkında kısa bir açıklama..." value={caseData.caseDescription} onChange={handleCaseInputChange}/>
                          </div>
+                         {/* Add more fields related to the case itself here */}
+                         {/* Example: Court Name, File Number, Start Date etc. */}
                      </div>
                   </div>
                )}
 
+               {/* Navigation Footer */}
                <DialogFooter className="mt-6 pt-4 border-t">
                   {step > 1 && (
                      <Button type="button" variant="outline" onClick={handleBack}>
@@ -298,7 +449,7 @@ export default function LawyerCasesView() {
                      </Button>
                   ) : (
                      <Button type="button" onClick={handleSave} className="bg-accent hover:bg-accent/80">
-                        Kaydet
+                        Davayı Kaydet
                      </Button>
                   )}
                </DialogFooter>
@@ -307,7 +458,7 @@ export default function LawyerCasesView() {
       </div>
 
 
-      {/* Devam Eden Davalar */}
+      {/* Devam Eden Davalar Listesi */}
       <h2 className="text-2xl font-semibold text-primary mb-4">Devam Eden Davalar</h2>
       <Card className="mb-8 border-2 border-primary/50 shadow-lg">
         <CardContent className="p-0">
@@ -369,7 +520,7 @@ export default function LawyerCasesView() {
         </CardContent>
       </Card>
 
-      {/* Tamamlanmış Davalar */}
+      {/* Tamamlanmış Davalar Listesi */}
       <h2 className="text-2xl font-semibold text-accent mb-4">Tamamlanmış Davalar</h2>
        <Card className="border-2 border-accent/50 shadow-lg">
          <CardContent className="p-0">
@@ -402,4 +553,3 @@ export default function LawyerCasesView() {
     </div>
   );
 }
-
