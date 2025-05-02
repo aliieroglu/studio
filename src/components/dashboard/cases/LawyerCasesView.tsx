@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -9,10 +8,14 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
-import { Briefcase, Clock, MapPin, Eye, PlusCircle } from "lucide-react"; // Added icons
+import { Briefcase, Clock, MapPin, Eye, PlusCircle, ArrowLeft, ArrowRight } from "lucide-react"; // Added icons
 import Image from 'next/image'; // Import next/image
 import Link from 'next/link'; // Import Link
 import { Button } from "@/components/ui/button"; // Import Button
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogOverlay, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 // Sample data for Lawyer's view (replace with actual data fetching)
 const ongoingCases = [
@@ -54,6 +57,12 @@ const completedCases = [
 ];
 
 export default function LawyerCasesView() {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(1); // Step for the multi-step form
+
+  const handleNext = () => setStep(prev => prev + 1);
+  const handleBack = () => setStep(prev => prev - 1);
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -62,9 +71,71 @@ export default function LawyerCasesView() {
            <h1 className="text-3xl font-bold text-primary">Müvekkil Davaları</h1>
          </div>
          {/* Add New Case Button */}
-         <Button className="bg-accent hover:bg-accent/90">
-            <PlusCircle className="mr-2 h-4 w-4" /> Yeni Dava Oluştur
-         </Button>
+         <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+               <Button className="bg-accent hover:bg-accent/90">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Yeni Dava Oluştur
+               </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+               <DialogHeader>
+                  <DialogTitle>Yeni Dava Oluştur</DialogTitle>
+               </DialogHeader>
+               {step === 1 && (
+                  <div>
+                     <h3 className="text-lg font-semibold mb-4">1. Müvekkil Bilgileri</h3>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                           <Label htmlFor="firstName">Ad</Label>
+                           <Input id="firstName" placeholder="Müvekkil Adı" />
+                        </div>
+                        <div>
+                           <Label htmlFor="lastName">Soyad</Label>
+                           <Input id="lastName" placeholder="Müvekkil Soyadı" />
+                        </div>
+                     </div>
+                     <div className="mt-4">
+                        <Label htmlFor="email">E-posta</Label>
+                        <Input id="email" type="email" placeholder="E-posta Adresi" />
+                     </div>
+                  </div>
+               )}
+               {step === 2 && (
+                  <div>
+                     <h3 className="text-lg font-semibold mb-4">2. Avukat Bilgileri</h3>
+                     <div>
+                        <Label htmlFor="lawyerName">Avukat Adı</Label>
+                        <Input id="lawyerName" placeholder="Avukatın Adı" />
+                     </div>
+                  </div>
+               )}
+               {step === 3 && (
+                  <div>
+                     <h3 className="text-lg font-semibold mb-4">3. Dava Bilgileri</h3>
+                     <div>
+                        <Label htmlFor="caseName">Dava Adı</Label>
+                        <Input id="caseName" placeholder="Dava Adı" />
+                     </div>
+                  </div>
+               )}
+               <DialogFooter>
+                  {step > 1 && (
+                     <Button type="button" variant="secondary" onClick={handleBack}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Geri
+                     </Button>
+                  )}
+                  {step < 3 ? (
+                     <Button type="button" onClick={handleNext}>
+                        İleri <ArrowRight className="ml-2 h-4 w-4" />
+                     </Button>
+                  ) : (
+                     <Button type="button">
+                        Kaydet
+                     </Button>
+                  )}
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
       </div>
 
 
@@ -163,3 +234,4 @@ export default function LawyerCasesView() {
     </div>
   );
 }
+
