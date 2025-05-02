@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
-import { Briefcase, Clock, MapPin, Eye, PlusCircle, ArrowLeft, ArrowRight, User, Phone, Mail, Building, Banknote, ShieldAlert, Home } from "lucide-react"; // Added icons
+import { Briefcase, Clock, MapPin, Eye, PlusCircle, ArrowLeft, ArrowRight, User, Phone, Mail, Building, Banknote, ShieldAlert, Home, UserCircle, GraduationCap } from "lucide-react"; // Added more icons
 import Image from 'next/image'; // Import next/image
 import Link from 'next/link'; // Import Link
 import { Button } from "@/components/ui/button"; // Import Button
@@ -108,6 +108,12 @@ export default function LawyerCasesView() {
       setOpen(false); // Close dialog after save
       setStep(1); // Reset step
       // Reset form states if necessary
+       setClientData({ // Reset client data form
+        firstName: '', lastName: '', tcKimlik: '', birthDate: undefined,
+        email: '', phone: '', address: '', companyName: '', title: '',
+        iban: '', bankName: '', paymentMethod: '', emergencyContactName: '',
+        emergencyContactRelationship: '', emergencyContactPhone: '',
+      });
   };
 
 
@@ -133,11 +139,11 @@ export default function LawyerCasesView() {
                {/* Step 1: Müvekkil Bilgileri */}
                {step === 1 && (
                   <div className="space-y-6 p-2">
-                     <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><User className="h-5 w-5" /> 1. Müvekkil Bilgileri</h3>
+                     <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><UserCircle className="h-5 w-5" /> 1. Müvekkil Bilgileri</h3>
 
                      {/* Temel Kimlik Bilgileri */}
                      <div className="space-y-4 p-4 border rounded-lg">
-                         <h4 className="font-medium text-muted-foreground mb-3">Temel Kimlik Bilgileri</h4>
+                         <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><GraduationCap className="h-4 w-4"/> Temel Kimlik Bilgileri</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                <Label htmlFor="firstName">Ad</Label>
@@ -162,7 +168,7 @@ export default function LawyerCasesView() {
 
                      {/* İletişim Bilgileri */}
                      <div className="space-y-4 p-4 border rounded-lg">
-                         <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><Phone className="h-4 w-4" /> İletişim Bilgileri</h4>
+                         <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><Phone className="h-4 w-4" /> İletişim Bilgileri</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="email">E-posta Adresi</Label>
@@ -181,7 +187,7 @@ export default function LawyerCasesView() {
 
                      {/* Mesleki & Kurumsal Bilgiler */}
                      <div className="space-y-4 p-4 border rounded-lg">
-                         <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><Building className="h-4 w-4"/> Mesleki & Kurumsal Bilgiler</h4>
+                         <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><Building className="h-4 w-4"/> Mesleki & Kurumsal Bilgiler</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="companyName">Çalıştığı Kurum / Şirket Adı</Label>
@@ -196,7 +202,7 @@ export default function LawyerCasesView() {
 
                      {/* Hukuki / Mali Bilgiler */}
                      <div className="space-y-4 p-4 border rounded-lg">
-                        <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><Banknote className="h-4 w-4" /> Hukuki / Mali Bilgiler</h4>
+                        <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><Banknote className="h-4 w-4" /> Hukuki / Mali Bilgiler</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="iban">IBAN</Label>
@@ -225,7 +231,7 @@ export default function LawyerCasesView() {
 
                      {/* Acil Durum & İletişim Yetkilisi */}
                      <div className="space-y-4 p-4 border rounded-lg">
-                         <h4 className="font-medium text-muted-foreground mb-3 flex items-center gap-2"><ShieldAlert className="h-4 w-4"/> Acil Durum İletişim Yetkilisi</h4>
+                         <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><ShieldAlert className="h-4 w-4"/> Acil Durum İletişim Yetkilisi</h4>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="emergencyContactName">Ad Soyad</Label>
