@@ -37,6 +37,9 @@ export default function RegisterPage() {
   const [address, setAddress] = useState("");
 
   // Lawyer specific fields
+  const [lawyerTcKimlik, setLawyerTcKimlik] = useState("");
+  const [lawyerBirthDate, setLawyerBirthDate] = useState<Date | undefined>(undefined);
+  const [lawyerPhone, setLawyerPhone] = useState("");
   const [barRegistrationNumber, setBarRegistrationNumber] = useState("");
   const [specialization, setSpecialization] = useState("");
 
@@ -58,7 +61,7 @@ export default function RegisterPage() {
         return;
       }
     } else if (role === "lawyer") {
-      if (!barRegistrationNumber || !specialization) {
+      if (!lawyerTcKimlik || !lawyerBirthDate || !lawyerPhone || !barRegistrationNumber || !specialization) {
         alert("Lütfen tüm avukat bilgilerini doldurun.");
         return;
       }
@@ -73,7 +76,7 @@ export default function RegisterPage() {
       role,
       ...(role === "client"
         ? { tcKimlik, birthDate, phone, address }
-        : { barRegistrationNumber, specialization }),
+        : { lawyerTcKimlik, lawyerBirthDate, lawyerPhone, barRegistrationNumber, specialization }),
     };
     console.log("Registration attempt with:", registrationData);
 
@@ -213,6 +216,39 @@ export default function RegisterPage() {
             {role === "lawyer" && (
               <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
                 <h4 className="flex items-center gap-2 text-sm font-semibold text-primary"><Briefcase className="h-4 w-4" /> Avukat Bilgileri</h4>
+                <div className="space-y-2">
+                  <Label htmlFor="lawyerTcKimlik">T.C. Kimlik No</Label>
+                  <Input
+                    id="lawyerTcKimlik"
+                    placeholder="12345678901"
+                    required
+                    value={lawyerTcKimlik}
+                    onChange={(e) => setLawyerTcKimlik(e.target.value)}
+                    className="focus:ring-accent"
+                    maxLength={11}
+                  />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="lawyerBirthDate">Doğum Tarihi</Label>
+                    <DatePicker
+                       date={lawyerBirthDate}
+                       setDate={setLawyerBirthDate}
+                       placeholder="Doğum Tarihi Seçin"
+                       className="focus:ring-accent"
+                    />
+                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lawyerPhone">Telefon Numarası</Label>
+                  <Input
+                    id="lawyerPhone"
+                    type="tel"
+                    placeholder="+90 555 123 4567"
+                    required
+                    value={lawyerPhone}
+                    onChange={(e) => setLawyerPhone(e.target.value)}
+                    className="focus:ring-accent"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="barRegistrationNumber">
                     Baro Sicil Numarası
