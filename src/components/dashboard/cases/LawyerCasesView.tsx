@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -80,12 +79,22 @@ const allLawyers = [
   { id: "l4", name: "Av. Hasan Demir", barId: "555666777", imageUrl: "https://picsum.photos/seed/lawyer4/40/40", initials: "HD" },
 ];
 
+// --- Sample Client Data ---
+const allClients = [
+  { id: "c1", firstName: "Ali", lastName: "Veli", tcKimlik: "11111111111", birthDate: new Date('1990-01-01'), email: "ali.veli@example.com", phone: "+905551111111", address: "İstanbul", companyName: "AV Şirketi", title: "CEO", iban: "TR11111111111111111111111", bankName: "ABank", paymentMethod: "havale", emergencyContactName: "Veli", emergencyContactRelationship: "Eşi", emergencyContactPhone: "+905552222222", imageUrl: "https://picsum.photos/seed/client1/40/40", initials: "AV" },
+  { id: "c2", firstName: "Zeynep", lastName: "Kara", tcKimlik: "22222222222", birthDate: new Date('1992-02-02'), email: "zeynep.kara@example.com", phone: "+905553333333", address: "Ankara", companyName: "ZK Holding", title: "Yönetici", iban: "TR22222222222222222222222", bankName: "BBank", paymentMethod: "kredi_karti", emergencyContactName: "Kara", emergencyContactRelationship: "Annesi", emergencyContactPhone: "+905554444444", imageUrl: "https://picsum.photos/seed/client2/40/40", initials: "ZK" },
+  { id: "c3", firstName: "Mustafa", lastName: "Demir", tcKimlik: "33333333333", birthDate: new Date('1985-03-03'), email: "mustafa.demir@example.com", phone: "+905555555555", address: "İzmir", companyName: "MD AŞ", title: "Müdür", iban: "TR33333333333333333333333", bankName: "CBank", paymentMethod: "nakit", emergencyContactName: "Demir", emergencyContactRelationship: "Babası", emergencyContactPhone: "+905556666666", imageUrl: "https://picsum.photos/seed/client3/40/40", initials: "MD" },
+];
+
 // --- Component ---
 
 export default function LawyerCasesView() {
   const { userRole } = useAuth(); // Use auth context if needed later
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1); // Step for the multi-step form
+
+  // State for selected client
+  const [selectedClient, setSelectedClient] = useState<typeof allClients[0] | null>(null);
 
   // State for client form data
   const [clientData, setClientData] = useState({
@@ -109,6 +118,8 @@ export default function LawyerCasesView() {
   // State for Add Lawyer Dialog
   const [addLawyerDialogOpen, setAddLawyerDialogOpen] = useState(false);
   const [lawyerSearchQuery, setLawyerSearchQuery] = useState("");
+  const [selectClientDialogOpen, setSelectClientDialogOpen] = useState(false);
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
 
   // Handle input changes for client form
   const handleClientInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -140,6 +151,7 @@ export default function LawyerCasesView() {
   const resetAndClose = () => {
       setOpen(false);
       setStep(1);
+      setSelectedClient(null);
       setClientData({
         firstName: '', lastName: '', tcKimlik: '', birthDate: undefined,
         email: '', phone: '', address: '', companyName: '', title: '',
@@ -171,12 +183,37 @@ export default function LawyerCasesView() {
        setAdditionalLawyers(prev => prev.filter(l => l.id !== lawyerIdToRemove));
   };
 
+    const handleSelectClient = (clientToAdd: typeof allClients[0]) => {
+        setSelectedClient(clientToAdd);
+        setClientData({
+            firstName: clientToAdd.firstName,
+            lastName: clientToAdd.lastName,
+            tcKimlik: clientToAdd.tcKimlik,
+            birthDate: clientToAdd.birthDate,
+            email: clientToAdd.email,
+            phone: clientToAdd.phone,
+            address: clientToAdd.address,
+            companyName: '', title: '',  // Clear these, assuming lawyer will enter fresh data
+            iban: '', bankName: '', paymentMethod: '', emergencyContactName: '',
+            emergencyContactRelationship: '', emergencyContactPhone: '',
+        });
+        setSelectClientDialogOpen(false);
+        setClientSearchQuery("");
+    };
+
+
   // Filter lawyers for search
   const filteredLawyers = allLawyers.filter(lawyer =>
       lawyer.name.toLowerCase().includes(lawyerSearchQuery.toLowerCase()) &&
       lawyer.id !== primaryLawyer.id && // Exclude primary lawyer
       !additionalLawyers.some(al => al.id === lawyer.id) // Exclude already added lawyers
   );
+
+    const filteredClients = allClients.filter(client =>
+        (client.firstName.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+            client.lastName.toLowerCase().includes(clientSearchQuery.toLowerCase())) &&
+        selectedClient?.id !== client.id
+    );
 
 
   return (
@@ -201,51 +238,83 @@ export default function LawyerCasesView() {
                {/* Step 1: Müvekkil Bilgileri */}
                {step === 1 && (
                   <div className="space-y-6 p-2">
-                     <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2"><UserCircle className="h-5 w-5" /> 1. Müvekkil Bilgileri</h3>
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-primary flex items-center gap-2">
+                      <UserCircle className="h-5 w-5" /> 1. Müvekkil Bilgileri
+                    </h3>
 
-                     {/* Temel Kimlik Bilgileri */}
-                     <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
-                         <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><GraduationCap className="h-4 w-4"/> Temel Kimlik Bilgileri</h4>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                               <Label htmlFor="firstName">Ad</Label>
-                               <Input id="firstName" placeholder="Müvekkil Adı" value={clientData.firstName} onChange={handleClientInputChange} />
-                            </div>
-                            <div className="space-y-2">
-                               <Label htmlFor="lastName">Soyad</Label>
-                               <Input id="lastName" placeholder="Müvekkil Soyadı" value={clientData.lastName} onChange={handleClientInputChange} />
-                            </div>
-                         </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="space-y-2">
-                                <Label htmlFor="tcKimlik">T.C. Kimlik No</Label>
-                                <Input id="tcKimlik" placeholder="11 Haneli T.C. Kimlik Numarası" value={clientData.tcKimlik} onChange={handleClientInputChange} maxLength={11} />
-                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="birthDate">Doğum Tarihi</Label>
-                                <DatePicker date={clientData.birthDate} setDate={(date) => handleDateChange('birthDate', date)} />
-                            </div>
-                         </div>
-                     </div>
+                    <div className="p-4 border rounded-lg bg-primary/5">
+                      <h4 className="font-medium text-primary mb-3">Müvekkil Seç</h4>
 
-                     {/* İletişim Bilgileri */}
-                     <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
-                         <h4 className="font-medium text-primary mb-3 flex items-center gap-2"><Phone className="h-4 w-4" /> İletişim Bilgileri</h4>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="space-y-2">
-                                <Label htmlFor="email">E-posta Adresi</Label>
-                                <Input id="email" type="email" placeholder="ornek@mail.com" value={clientData.email} onChange={handleClientInputChange} />
-                             </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="phone">Telefon Numarası</Label>
-                                <Input id="phone" type="tel" placeholder="+90 555 123 4567" value={clientData.phone} onChange={handleClientInputChange} />
-                             </div>
-                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="address" className="flex items-center gap-1"><Home className="h-4 w-4"/> Adres (İkametgah)</Label>
-                            <Textarea id="address" placeholder="Müvekkilin ikametgah adresi..." value={clientData.address} onChange={handleClientInputChange} />
-                         </div>
-                     </div>
+                      {selectedClient ? (
+                        <div className="flex items-center gap-3 p-2 border rounded-md bg-background">
+                          <Avatar className="h-8 w-8 border">
+                            <AvatarImage src={selectedClient.imageUrl} alt={selectedClient.firstName} data-ai-hint="client person" />
+                            <AvatarFallback>{selectedClient.initials}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{selectedClient.firstName} {selectedClient.lastName}</p>
+                            <p className="text-xs text-muted-foreground">TCKN: {selectedClient.tcKimlik}</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8" onClick={() => setSelectedClient(null)}>
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Müvekkili Kaldır</span>
+                          </Button>
+                        </div>
+                      ) : (
+                        <Dialog open={selectClientDialogOpen} onOpenChange={setSelectClientDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Search className="mr-2 h-4 w-4" /> Müvekkil Seç
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                              <DialogTitle>Müvekkil Ara ve Ekle</DialogTitle>
+                            </DialogHeader>
+                            <div className="py-4 space-y-4">
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  id="client-search"
+                                  placeholder="Müvekkil adıyla ara..."
+                                  value={clientSearchQuery}
+                                  onChange={(e) => setClientSearchQuery(e.target.value)}
+                                  className="pl-9"
+                                />
+                              </div>
+                              <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                                {filteredClients.length > 0 ? (
+                                  filteredClients.map(client => (
+                                    <div key={client.id} className="flex items-center justify-between p-2 border rounded-md hover:bg-muted/50">
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="h-8 w-8 border">
+                                          <AvatarImage src={client.imageUrl} alt={client.firstName} data-ai-hint="client person"/>
+                                          <AvatarFallback className="text-xs">{client.initials}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <p className="text-sm font-medium">{client.firstName} {client.lastName}</p>
+                                          <p className="text-xs text-muted-foreground">TCKN: {client.tcKimlik}</p>
+                                        </div>
+                                      </div>
+                                      <Button size="sm" variant="outline" onClick={() => handleSelectClient(client)}>
+                                        Ekle
+                                      </Button>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="text-center text-sm text-muted-foreground pt-4">
+                                    {clientSearchQuery ? "Eşleşen müvekkil bulunamadı." : "Aramaya başlayın."}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setSelectClientDialogOpen(false)}>Kapat</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
 
                      {/* Mesleki & Kurumsal Bilgiler */}
                      <div className="space-y-4 p-4 border rounded-lg bg-primary/5">
@@ -553,3 +622,4 @@ export default function LawyerCasesView() {
     </div>
   );
 }
+
