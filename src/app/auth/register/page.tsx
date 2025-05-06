@@ -45,7 +45,7 @@ export default function RegisterPage() {
 
   const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Basic validation for common fields
@@ -67,22 +67,38 @@ export default function RegisterPage() {
       }
     }
 
-    // Placeholder for actual registration logic
-    const registrationData = {
-      firstName,
-      lastName,
-      email,
-      password,
-      role,
-      ...(role === "client"
-        ? { tcKimlik, birthDate, phone, address }
-        : { lawyerTcKimlik, lawyerBirthDate, lawyerPhone, barRegistrationNumber, specialization }),
-    };
-    console.log("Registration attempt with:", registrationData);
+    try {
+      const registrationData = {
+        firstName,
+        lastName,
+        email,
+        password,
+        role,
+        ...(role === "client"
+          ? { tcKimlik, birthDate, phone, address }
+          : { lawyerTcKimlik, lawyerBirthDate, lawyerPhone, barRegistrationNumber, specialization }),
+      };
 
-    // Simulate successful registration and redirect to login
-    alert("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.");
-    router.push("/auth/login");
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registrationData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.");
+        router.push("/auth/login");
+      } else {
+        alert(`Kayıt başarısız: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+    }
   };
 
   return (

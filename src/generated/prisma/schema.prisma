@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Kullanıcı modeli - hem avukatlar hem de müvekkiller için temel bilgiler
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  password  String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // İlişkiler
+  client Client?
+  lawyer Lawyer?
+
+  @@index([email])
+  @@map("users")
+}
+
+// Müvekkil modeli
+model Client {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
+  tcKimlik  String
+  birthDate DateTime @map("birth_date")
+  phone     String
+  address   String
+
+  // İlişkiler
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cases Case[]
+
+  @@index([tcKimlik])
+  @@map("clients")
+}
+
+// Avukat modeli
+model Lawyer {
+  id                    Int      @id @default(autoincrement())
+  userId                Int      @unique @map("user_id")
+  tcKimlik              String
+  birthDate             DateTime @map("birth_date")
+  phone                 String
+  barRegistrationNumber String   @map("bar_registration_number")
+  specialization        String
+
+  // İlişkiler
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cases Case[]
+
+  @@index([tcKimlik])
+  @@index([barRegistrationNumber])
+  @@map("lawyers")
+}
+
+// Dava modeli
+model Case {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String
+  status      CaseStatus @default(OPEN)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  // İlişkiler
+  clientId  Int        @map("client_id")
+  lawyerId  Int?       @map("lawyer_id")
+  client    Client     @relation(fields: [clientId], references: [id])
+  lawyer    Lawyer?    @relation(fields: [lawyerId], references: [id])
+  documents Document[]
+  hearings  Hearing[]
+
+  @@map("cases")
+}
+
+// Evrak modeli
+model Document {
+  id         Int      @id @default(autoincrement())
+  title      String
+  filePath   String   @map("file_path")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  // İlişkiler
+  caseId Int  @map("case_id")
+  case   Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+// Duruşma modeli
+model Hearing {
+  id       Int      @id @default(autoincrement())
+  date     DateTime
+  location String
+  notes    String?
+
+  // İlişkiler
+  caseId Int  @map("case_id")
+  case   Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@map("hearings")
+}
+
+// Bildirim modeli 
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+enum Role {
+  CLIENT
+  LAWYER
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}

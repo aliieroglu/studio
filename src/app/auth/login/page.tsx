@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, type UserRole } from '@/context/AuthContext'; // Import useAuth and UserRole
+import { useAuth, type UserRole } from '@/context/AuthContext';
 
 // Placeholder SVG for LexFlow Logo
 const LexFlowLogo = () => (
@@ -25,28 +24,55 @@ const LexFlowLogo = () => (
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(""); // Error state for login failures
+  const [isLoading, setIsLoading] = useState(false); // Loading state for form submission
   const router = useRouter();
-  const { setUserRole } = useAuth(); // Get setUserRole from context
+  const { setUserRole } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(""); // Clear any previous errors
+    
     if (!email || !password) {
-      alert("Lütfen e-posta ve şifrenizi girin.");
+      setError("Lütfen e-posta ve şifrenizi girin.");
       return;
     }
-    console.log("Login attempt with:", { email, password });
-
-    // --- SIMULATION: Determine role based on email ---
-    // Replace this with actual authentication and role fetching
-    let role: UserRole = 'client'; // Default to client
-    if (email.toLowerCase().includes('lawyer')) {
-      role = 'lawyer';
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Giriş başarısız.");
+      }
+      
+      // Login successful
+      const userRole = data.user.role.toLowerCase() as UserRole;
+      console.log("Login successful:", data.user);
+      
+      setUserRole(userRole);
+      
+      // Store user in localStorage for persistent login (optional)
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Redirect to dashboard
+      router.push("/dashboard");
+      
+    } catch (error: any) {
+      console.error("Login error:", error);
+      setError(error.message || "Giriş yaparken bir hata oluştu. Lütfen tekrar deneyin.");
+    } finally {
+      setIsLoading(false);
     }
-    // --- END SIMULATION ---
-
-    setUserRole(role); // Set the user role in the context
-
-    router.push("/dashboard");
   };
 
   return (
@@ -58,22 +84,27 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold text-primary">Giriş Yap</CardTitle>
           <CardDescription>
-            Hesabınıza erişmek için e-posta adresinizi girin <br/>
-            <span className="text-xs text-muted-foreground">(Simülasyon: 'lawyer' içeren e-posta avukat, diğerleri müvekkil olarak giriş yapar)</span>
+            Hesabınıza erişmek için e-posta adresinizi ve şifrenizi girin
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span className="block sm:inline">{error}</span>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">E-posta</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="ornek@mail.com veya lawyer@mail.com"
+                placeholder="ornek@mail.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="focus:ring-accent"
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -91,10 +122,15 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="focus:ring-accent"
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 transition-colors duration-200">
-              Giriş Yap
+            <Button 
+              type="submit" 
+              className="w-full bg-accent hover:bg-accent/90 transition-colors duration-200"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
